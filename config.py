@@ -12,12 +12,12 @@ MODEL_ID = "Dragneel/whisper-medium-nepali-openslr"
 DATASET_ID = "spktsagar/openslr-nepali-asr-cleaned"
 LANGUAGE = "Nepali"
 TASK = "transcribe"
-TEST_SIZE = 0.1  # 10% for validation, 90% for training
 
 # Dataset Limit (set to None for full dataset)
-MAX_SAMPLES = 11000  # Total samples to use (None = use all). Split by TEST_SIZE ratio.
+MAX_SAMPLES = 500  # Total samples to use (None = use all). Split by TEST_SIZE ratio.
+TEST_SIZE = 0.1 
 
-# --- Training Hyperparameters (User-Adjustable) ---
+# --- Training Hyperparameters ---
 NUM_EPOCHS = 1
 BATCH_SIZE = 2
 GRAD_ACCUMULATION = 4
@@ -26,7 +26,7 @@ LR_SCHEDULER = "cosine"
 
 # --- LoRA Configuration ---
 LORA_R = 64
-LORA_ALPHA = 128
+LORA_ALPHA = 64
 
 # --- Checkpointing ---
 OUTPUT_DIR = "outputs"

@@ -1,21 +1,18 @@
-unsloth
-transformers==4.56.2
-trl==0.22.2
-bitsandbytes
+# Core dependencies (Windows compatible)
+torch>=2.0.0
+transformers>=4.40.0
+datasets>=3.4.1
 accelerate
 peft
-triton
-cut_cross_entropy
-unsloth_zoo
-sentencepiece
-protobuf
-datasets>=3.4.1,<4.0.0
-huggingface_hub>=0.34.0
-hf_transfer
+python-dotenv
 evaluate
 jiwer
-torchcodec
+huggingface_hub>=0.34.0
+sentencepiece
+protobuf
 librosa
 soundfile
-python-dotenv
-ctranslate2 
+
+# Note for Windows users:
+# triton, unsloth, and torchcodec are Linux-only
+# For Windows local training, use WSL2 or run in Google Colab

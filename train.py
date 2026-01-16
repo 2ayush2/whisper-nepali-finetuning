@@ -20,7 +20,12 @@ from unsloth import FastModel, is_bf16_supported
 
 import config
 from utils.logger import ExperimentLogger
-from utils.data_utils import formatting_prompts_func, remove_bad_examples, DataCollatorSpeechSeq2SeqWithPadding, compute_metrics
+from utils.data_utils import (
+    create_formatting_function,
+    remove_bad_examples,
+    DataCollatorSpeechSeq2SeqWithPadding,
+    create_compute_metrics
+)
 from utils.file_utils import setup_experiment_dir
 
 logger = logging.getLogger(__name__)
@@ -57,11 +62,13 @@ class WhisperFinetuner:
             random_state=3407,
             use_rslora=False,
             loftq_config=None,
+            task_type=None,  # FIXED: Added task_type parameter
         )
         # Generation Config
-        self.model.generation_config.language = "ne"
+        self.model.generation_config.language = "<|ne|>"  # FIXED: Proper format
         self.model.generation_config.task = config.TASK
         self.model.config.suppress_tokens = []
+        self.model.generation_config.forced_decoder_ids = None  # FIXED: Added this
         
     def prepare_data(self):
         """Loads and preprocesses the dataset."""
@@ -80,12 +87,20 @@ class WhisperFinetuner:
 
         self.logger.info(f"Train Size: {len(raw_train)}, Test Size: {len(raw_test)}")
 
-        # Processing
+        # Processing - FIXED: Use factory function
         self.logger.info("Mapping and Filtering Dataset...")
-        process_func = partial(formatting_prompts_func, tokenizer=self.tokenizer)
+        formatting_func = create_formatting_function(self.tokenizer)
 
-        self.train_dataset = raw_train.map(process_func, remove_columns=raw_train.column_names, batched=False)
-        self.test_dataset = raw_test.map(process_func, remove_columns=raw_test.column_names)
+        self.train_dataset = raw_train.map(
+            formatting_func, 
+            remove_columns=raw_train.column_names, 
+            batched=False
+        )
+        self.test_dataset = raw_test.map(
+            formatting_func, 
+            remove_columns=raw_test.column_names,
+            batched=False
+        )
         
         self.train_dataset = self.train_dataset.filter(remove_bad_examples)
         self.test_dataset = self.test_dataset.filter(remove_bad_examples)
@@ -114,21 +129,35 @@ class WhisperFinetuner:
             metric_for_best_model="wer",
             greater_is_better=False,
             eval_strategy="steps",
+            remove_unused_columns=False,  # FIXED: Added this
+            label_names=["labels"],  # FIXED: Added this
             report_to="none",
             seed=3407,
         )
+        
+        # FIXED: Use factory function for compute_metrics
+        compute_metrics_func = create_compute_metrics(self.tokenizer)
+        
         self.trainer = Seq2SeqTrainer(
             model=self.model,
             train_dataset=self.train_dataset,
             eval_dataset=self.test_dataset,
             data_collator=DataCollatorSpeechSeq2SeqWithPadding(processor=self.tokenizer),
             tokenizer=self.tokenizer,
-            compute_metrics=partial(compute_metrics, tokenizer=self.tokenizer),
+            compute_metrics=compute_metrics_func,  # FIXED: Use closure version
             args=training_args,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=config.PATIENCE)],
         )
         self.logger.info("Starting training...")
-        self.trainer.train()
+        
+        # Check for existing checkpoint
+        last_checkpoint = get_last_checkpoint(self.output_dir)
+        if last_checkpoint:
+            self.logger.info(f"Resuming training from checkpoint: {last_checkpoint}")
+            self.trainer.train(resume_from_checkpoint=last_checkpoint)
+        else:
+            self.logger.info("Starting training from scratch")
+            self.trainer.train()
 
     def export_model(self):
         self.logger.info("Saving Final Model Locally...")
