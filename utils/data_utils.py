@@ -32,17 +32,13 @@ def compute_metrics(pred, tokenizer):
     return {"wer": 100 * metric.compute(predictions=pred_str, references=label_str)}
 
 class DataCollatorSpeechSeq2SeqWithPadding:
-    """pads the inputs and labels to the max length."""
     def __init__(self, processor):
         self.processor = processor
-
     def __call__(self, features):
         input_features = [{"input_features": f["input_features"]} for f in features]
         batch = self.processor.feature_extractor.pad(input_features, return_tensors="pt")
-
         label_features = [{"input_ids": f["labels"]} for f in features]
         labels_batch = self.processor.tokenizer.pad(label_features, return_tensors="pt")
-
         labels = labels_batch["input_ids"].masked_fill(labels_batch.attention_mask.ne(1), -100)
         
         # Trim BOS if needed
@@ -50,4 +46,7 @@ class DataCollatorSpeechSeq2SeqWithPadding:
             labels = labels[:, 1:]
 
         batch["labels"] = labels
+        # Remove input_ids if present (Whisper uses input_features, not input_ids)
+        if "input_ids" in batch:
+            del batch["input_ids"]
         return batch
