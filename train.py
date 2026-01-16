@@ -59,14 +59,14 @@ class WhisperFinetuner:
             loftq_config=None,
         )
         # Generation Config
-        self.model.generation_config.language = "<|ne|>"
+        self.model.generation_config.language = "ne"
         self.model.generation_config.task = config.TASK
         self.model.config.suppress_tokens = []
         
     def prepare_data(self):
         """Loads and preprocesses the dataset."""
         self.logger.info(f"Loading Dataset: {config.DATASET_ID}")
-        dataset = load_dataset(config.DATASET_ID, name="cleaned", split="train")
+        dataset = load_dataset(config.DATASET_ID, name="cleaned", split="train", trust_remote_code=True)
         dataset = dataset.cast_column("utterance", Audio(sampling_rate=16000))
     
         # Optional: Limit total samples first
