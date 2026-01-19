@@ -3,18 +3,24 @@ import numpy as np
 import evaluate
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
+from utils.normalization import normalize_nepali_text
 
 # Load WER metric
 metric = evaluate.load("wer")
 
 def create_formatting_function(tokenizer):
     def formatting_prompts_func(example):
-        """Preprocesses audio and text for the model."""
         try:
             audio = example["utterance"]["array"]
             rate = example["utterance"]["sampling_rate"]
             features = tokenizer.feature_extractor(audio, sampling_rate=rate).input_features[0]
-            labels = tokenizer.tokenizer(example["transcription"], add_special_tokens=True, truncation=True).input_ids
+        
+            # Normalize Nepali transcription
+            cleaned_text = normalize_nepali_text(example["transcription"])
+            if not cleaned_text:
+                return {"input_features": None, "labels": None}
+                
+            labels = tokenizer.tokenizer(cleaned_text, add_special_tokens=True, truncation=True).input_ids
             return {"input_features": features, "labels": labels}
         except Exception:
             return {"input_features": None, "labels": None}

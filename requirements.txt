@@ -1,9 +1,9 @@
 # Core dependencies (Windows compatible)
 torch>=2.0.0
 transformers>=4.40.0
-datasets>=3.4.1
-accelerate
-peft
+datasets==2.19.0
+accelerate>=0.20.0
+peft>=0.4.0
 python-dotenv
 evaluate
 jiwer
@@ -13,6 +13,47 @@ protobuf
 librosa
 soundfile
 
-# Note for Windows users:
-# triton, unsloth, and torchcodec are Linux-only
-# For Windows local training, use WSL2 or run in Google Colab
+# Training utilities
+tensorboard
+wandb
+tqdm
+numpy>=1.24.0
+scipy
+
+# Audio processing
+audioread
+resampy
+sounddevice
+
+# Data handling
+pandas
+pyarrow
+fsspec
+
+# Model optimization
+bitsandbytes>=0.39.0
+optimum
+
+# Logging and monitoring
+safetensors
+psutil
+
+# Additional utilities
+requests
+urllib3
+certifi
+charset-normalizer
+idna
+
+# For tokenization
+tokenizers>=0.13.0
+
+# For metrics
+rouge-score
+sacrebleu
+
+# Unsloth for faster training (Linux/Colab)
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+triton
+xformers
+trl
