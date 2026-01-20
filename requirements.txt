@@ -1,26 +1,21 @@
-# Required for Unsloth / Whisper Fine-tuning (Colab Optimized)
-
-# Core ML
 unsloth
+transformers==4.56.2
+trl==0.22.2
 bitsandbytes
 accelerate
 peft
-trl==0.22.2
 triton
 cut_cross_entropy
 unsloth_zoo
-transformers==4.56.2
-
-# Data & Hub
+sentencepiece
+protobuf
 datasets>=3.4.1,<4.0.0
 huggingface_hub>=0.34.0
 hf_transfer
-sentencepiece
-protobuf
-
-# Audio & Evaluation
-librosa
-soundfile
 evaluate
 jiwer
 torchcodec
+librosa
+soundfile
+python-dotenv
+ctranslate2 
