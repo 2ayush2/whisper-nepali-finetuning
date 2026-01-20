@@ -1,36 +1,42 @@
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# --- Security ---
 HF_TOKEN = os.getenv("HF_TOKEN")
-# Optional: Only needed if uploading to HuggingFace Hub
 
-# --- Model & Data Configuration ---
-MODEL_ID = "Dragneel/whisper-medium-nepali-openslr"
+MODEL_ID = "openai/whisper-large-v3-turbo"
 DATASET_ID = "spktsagar/openslr-nepali-asr-cleaned"
 LANGUAGE = "Nepali"
 TASK = "transcribe"
-TEST_SIZE = 0.1  # 10% for validation, 90% for training
 
-# Dataset Limit (set to None for full dataset)
-MAX_SAMPLES = 11000  # Total samples to use (None = use all). Split by TEST_SIZE ratio.
+MAX_SAMPLES = 500 
+TEST_SIZE = 0.1 
 
-# --- Training Hyperparameters (User-Adjustable) ---
-NUM_EPOCHS = 1
+NUM_EPOCHS = 10
 BATCH_SIZE = 2
 GRAD_ACCUMULATION = 4
-LEARNING_RATE = 2e-4
+LEARNING_RATE = 1e-4
 LR_SCHEDULER = "cosine"
+WARMUP_RATIO = 0.1
+WARMUP_STEPS = 0
+WEIGHT_DECAY = 0.1
 
-# --- LoRA Configuration ---
-LORA_R = 64
-LORA_ALPHA = 128
+LORA_R = 128
+LORA_ALPHA = 256
+LORA_DROPOUT = 0.05
+USE_RSLORA = True
+LORA_TARGET_MODULES = ["q_proj", "v_proj", "k_proj", "out_proj", "fc1", "fc2"]
 
-# --- Checkpointing ---
 OUTPUT_DIR = "outputs"
-SAVE_STEPS = 250
-EVAL_STEPS = 250
+SAVE_STEPS = 50
+EVAL_STEPS = 50
 SAVE_TOTAL_LIMIT = 2
-PATIENCE = 3
+PATIENCE = 5
+
+MAX_LABEL_LENGTH = 448
+SAMPLING_RATE = 16000
+
+LOGGING_STEPS = 25
+REPORT_TO = ["none"]
+PREDICT_WITH_GENERATE = True
+LOAD_BEST_MODEL_AT_END = True
+METRIC_FOR_BEST_MODEL = "wer"
+GREATER_IS_BETTER = False
