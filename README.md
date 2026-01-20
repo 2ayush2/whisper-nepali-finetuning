@@ -1,42 +1,64 @@
-# Whisper Fine-Tuning Setup
+# Whisper Fine-Tuning for Nepali ASR
 
-A research-grade, production-ready setup for fine-tuning Whisper models.
+Fine-tuning OpenAI Whisper models for Nepali speech recognition using Unsloth and LoRA.
 
-## 🚀 Quick Start
-1.  **Dependencies**: `pip install -r requirements.txt`
-2.  **Environment**: Create `.env` and set your `HF_TOKEN`.
-3.  **Run**: `run_training.bat` (Windows) or `python train.py` (Linux).
+## Requirements
 
-## 🔬 Experimentation (Research Mode)
-This setup supports experiment tracking. Each run creates a unique, timestamped folder in `outputs/` so you never overwrite good models.
+- Python 3.10+
+- CUDA-compatible GPU (16GB+ VRAM recommended)
+- Linux (Ubuntu 20.04+ recommended)
 
-### CLI Arguments
-You can override default settings from the command line to quick-test new parameters:
+## Installation
 
 ```bash
-# Experiment 1: Lower learning rate
-python train.py --learning_rate 5e-5
-
-# Experiment 2: Larger batch size, more epochs
-python train.py --batch_size 4 --epochs 3
+git clone https://github.com/2ayush2/whisper-nepali-finetuning.git
+cd whisper-nepali-finetuning
+pip install -r requirements.txt
 ```
 
-### Output Structure
+## Usage
+
+Basic training:
+```bash
+python train.py
+```
+
+With custom arguments:
+```bash
+python train.py --learning_rate 1e-4 --batch_size 2 --epochs 10 --lora_rank 128
+```
+
+## CLI Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| --learning_rate | float | 1e-4 | Learning rate |
+| --batch_size | int | 2 | Per-device batch size |
+| --epochs | int | 10 | Number of training epochs |
+| --lora_rank | int | 128 | LoRA rank |
+
+## Configuration
+
+Edit `config.py` to modify default settings:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| MODEL_ID | openai/whisper-large-v3-turbo | Base model |
+| DATASET_ID | spktsagar/openslr-nepali-asr-cleaned | Dataset |
+| MAX_SAMPLES | 500 | Limit samples (None for full) |
+| GRAD_ACCUMULATION | 4 | Gradient accumulation steps |
+| LORA_R | 128 | LoRA rank |
+| LORA_ALPHA | 256 | LoRA alpha |
+| EVAL_STEPS | 50 | Evaluation frequency |
+| SAVE_STEPS | 50 | Checkpoint frequency |
+
+## Output Structure
+
 ```
 outputs/
-└── run_2024-01-16_10-50_lr0.0002_bs2/
-    ├── training.log            # Full training logs
-    ├── hyperparameters.json    # Exact settings used for this run
-    ├── checkpoint-250/         # Saved model checkpoints
-    └── ...
+  run_2026-01-20_10-30-00_lr0.0001_bs2/
+    training.log
+    checkpoint-50/
+    checkpoint-100/
+    final_model_merged/
 ```
-
-## ⚙️ Configuration (`config.py`)
-Edit `config.py` to change default "production" settings:
-- `MODEL_ID`: Base model (e.g., `Dragneel/whisper-medium-nepali-openslr`)
-- `LORA_R`: LoRA Rank (Efficiency vs Capacity)
-- `TARGET_MODULES`: Layers to fine-tune
-- `SAVE_STEPS`: How often to save.
-
-## 🛠️ Utils (`utils.py`)
-Contains data preprocessing logic. Modify this if you need to change how audio is cleaned or how metrics (WER) are calculated.
