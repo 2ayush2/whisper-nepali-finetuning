@@ -1,8 +1,10 @@
-import logging, os, sys
+import logging
+import os
+import sys
 
 class ExperimentLogger:
     @staticmethod
-    def setup(output_dir):
+    def setup_logging(output_dir: str):
         formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         log_file = os.path.join(output_dir, "training.log")
         file_handler = logging.FileHandler(log_file)
@@ -17,9 +19,6 @@ class ExperimentLogger:
             root_logger.handlers.clear()
         root_logger.addHandler(file_handler)
         root_logger.addHandler(console_handler)
-        # benign Whisper Turbo weight warnings to avoid Unsloth exceptions
-        class UninitializedWeightFilter(logging.Filter):
-            def filter(self, record):
-                return "proj_out.weight" not in record.getMessage()
-        logging.getLogger("transformers.modeling_utils").addFilter(UninitializedWeightFilter())
-        return logging.getLogger("WhisperSOTA")
+        logger = logging.getLogger(__name__)
+        logger.info(f"Logging configured. Log file: {log_file}")
+        return root_logger
