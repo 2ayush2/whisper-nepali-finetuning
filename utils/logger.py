@@ -23,4 +23,3 @@ class ExperimentLogger:
                 return "proj_out.weight" not in record.getMessage()
         logging.getLogger("transformers.modeling_utils").addFilter(UninitializedWeightFilter())
         return logging.getLogger("WhisperSOTA")
-    setup_logging = setup

@@ -20,7 +20,7 @@ class WhisperFinetuner:
         self.logger.info(f"Loading SOTA Base Model: {config.MODEL_ID}")
         self.model, self.tokenizer = FastModel.from_pretrained(
             model_name=config.MODEL_ID,
-            load_in_4bit=True,
+            load_in_4bit=False,
             auto_model=WhisperForConditionalGeneration,
             whisper_language=config.LANGUAGE,
             whisper_task=config.TASK
@@ -36,29 +36,15 @@ class WhisperFinetuner:
             use_rslora=config.USE_RSLORA
         )
 
-        # SOTA Model Configuration
-        gen_config = self.model.generation_config
-        model_config = self.model.config
+        # Accuracy Configuration from Config
+        self.model.config.use_cache = False
+        self.model.config.apply_spec_augment = config.APPLY_SPEC_AUGMENT
         
-        # Generation Parameters
-        gen_config.language = "<|ne|>"
-        gen_config.task = config.TASK
-        gen_config.forced_decoder_ids = None
-        gen_config.max_length = config.MAX_LABEL_LENGTH
-        gen_config.num_beams = 5
-        gen_config.condition_on_previous_text = False
-        gen_config.compression_ratio_threshold = 1.8
-        gen_config.logprob_threshold = -1.0
-        gen_config.no_speech_threshold = 0.6
-        
-        # Model & SpecAugment Parameters (ACCURACY FOCUS)
-        model_config.suppress_tokens = []
-        model_config.use_cache = False
-        model_config.apply_spec_augment = True
-        model_config.mask_time_prob = 0.05
-        model_config.mask_feature_prob = 0.05
-        model_config.mask_time_length = 10
-        model_config.mask_feature_length = 10
+        # Generation Parameters for Accuracy
+        self.model.generation_config.language = "<|ne|>"
+        self.model.generation_config.task = config.TASK
+        self.model.generation_config.num_beams = config.NUM_BEAMS
+        self.model.generation_config.max_length = config.MAX_LABEL_LENGTH
 
     def prepare_data(self):
         self.logger.info(f"Loading Dataset: {config.DATASET_ID}")
@@ -70,11 +56,11 @@ class WhisperFinetuner:
             dataset = dataset.select(range(max_samples))
         
         split_data = dataset.train_test_split(test_size=config.TEST_SIZE, seed=3407)
-        format_fn = create_formatting_function(self.tokenizer)
+        format_fn = create_formatting_function(self.tokenizer, max_length=config.MAX_LABEL_LENGTH)
         
         self.train_dataset = split_data["train"].map(format_fn, remove_columns=split_data["train"].column_names).filter(remove_bad_examples)
         self.test_dataset = split_data["test"].map(format_fn, remove_columns=split_data["test"].column_names).filter(remove_bad_examples)
-        self.logger.info(f"Final Filtered Sizes -> Train: {len(self.train_dataset)}, Test: {len(self.test_dataset)}")
+        self.logger.info(f"Final Data sizes -> Train: {len(self.train_dataset)}, Test: {len(self.test_dataset)}")
 
     def train(self):
         training_args = Seq2SeqTrainingArguments(
@@ -91,15 +77,14 @@ class WhisperFinetuner:
             fp16=not is_bf16_supported(),
             bf16=is_bf16_supported(),
             weight_decay=config.WEIGHT_DECAY,
-            label_smoothing_factor=0.1,  # ACCURACY FOCUS
-            predict_with_generate=True,
-            load_best_model_at_end=True,
-            metric_for_best_model="wer",
-            greater_is_better=False,
+            label_smoothing_factor=config.LABEL_SMOOTHING,
+            predict_with_generate=config.PREDICT_WITH_GENERATE,
+            load_best_model_at_end=config.LOAD_BEST_MODEL_AT_END,
+            metric_for_best_model=config.METRIC_FOR_BEST_MODEL,
+            greater_is_better=config.GREATER_IS_BETTER,
             eval_strategy="steps",
             eval_accumulation_steps=1,
-            remove_unused_columns=True,  # ACCURACY FIX: Correctly strip input_ids
-            label_names=["labels"],
+            remove_unused_columns=True,
             report_to=config.REPORT_TO
         )
 
@@ -108,7 +93,8 @@ class WhisperFinetuner:
             train_dataset=self.train_dataset,
             eval_dataset=self.test_dataset,
             data_collator=DataCollatorSpeechSeq2SeqWithPadding(processor=self.tokenizer),
-            tokenizer=self.tokenizer,
+            # processing_class is the replacement for tokenizer in newer transformers
+            processing_class=self.tokenizer,
             compute_metrics=create_compute_metrics(self.tokenizer),
             args=training_args,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=config.PATIENCE)]
