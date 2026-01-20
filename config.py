@@ -5,7 +5,7 @@ DATASET_ID = "spktsagar/openslr-nepali-asr-cleaned"
 LANGUAGE = "Nepali"
 TASK = "transcribe"
 
-MAX_SAMPLES = None
+MAX_SAMPLES = 500
 TEST_SIZE = 0.1
 
 NUM_EPOCHS = 3
@@ -19,7 +19,7 @@ WEIGHT_DECAY = 0.01
 
 LORA_R = 32
 LORA_ALPHA = 64
-LORA_DROPOUT = 0
+LORA_DROPOUT = 0.05
 USE_RSLORA = True
 LORA_TARGET_MODULES = ["q_proj", "v_proj", "k_proj", "out_proj", "fc1", "fc2"]
 
